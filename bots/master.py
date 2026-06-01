@@ -5,6 +5,7 @@ import random
 import asyncio
 import logging
 import re
+from html import escape as html_escape
 from typing import Dict, Optional
 from pathlib import Path
 
@@ -31,17 +32,14 @@ class TokenInput(StatesGroup):
     waiting_for_select_character = State()
 
 
-def escape_markdown(text: str) -> str:
-    """Экранирует спецсимволы для MarkdownV2."""
-    specials = r"_*[]()~`>#+-=|{}.!"
-    for ch in specials:
-        text = text.replace(ch, f"\\{ch}")
-    return text
+def html_bold(text: str) -> str:
+    """Безопасный bold в HTML."""
+    return f"<b>{html_escape(text)}</b>"
 
 
-def md_bold(text: str) -> str:
-    """Безопасный bold в Markdown."""
-    return f"*{escape_markdown(text)}*"
+def html_safe(text: str) -> str:
+    """Экранирует HTML-спецсимволы."""
+    return html_escape(text)
 
 
 class MasterBot:
@@ -218,19 +216,19 @@ class MasterBot:
             hobbies = ', '.join(personality['hobbies'])
             await callback.message.answer(
                 f"✅ Персонаж сгенерирован!\n\n"
-                f"👤 {md_bold(personality['name'])} "
+                f"👤 {html_bold(personality['name'])} "
                 f"({personality['age']} лет)\n"
-                f"🧠 Черты: {escape_markdown(traits)}\n"
-                f"🎨 Хобби: {escape_markdown(hobbies)}\n"
-                f"📖 {escape_markdown(personality['backstory'])}\n"
-                f"💬 Стиль: {escape_markdown(personality['communication_style'])}\n"
-                f"🤖 Модель: {escape_markdown(model)}\n\n"
+                f"🧠 Черты: {html_safe(traits)}\n"
+                f"🎨 Хобби: {html_safe(hobbies)}\n"
+                f"📖 {html_safe(personality['backstory'])}\n"
+                f"💬 Стиль: {html_safe(personality['communication_style'])}\n"
+                f"🤖 Модель: {html_safe(model)}\n\n"
                 f"👇 Нажми кнопку ниже:\n"
                 f"Откроется экран создания бота → подтверди → "
                 f"бот подключится автоматически!\n\n"
                 f"⚠️ Твой мастер-бот должен иметь "
                 f"`can_manage_bots=true` (включается через @BotFather MiniApp)",
-                parse_mode="MarkdownV2",
+                parse_mode="HTML",
                 reply_markup=kb)
 
         # ═══════ СОЗДАНИЕ ПЕРСОНАЖА (ручной ввод токена) ═══════
@@ -289,14 +287,14 @@ class MasterBot:
 
                 traits = ', '.join(personality['traits'])
                 await callback.message.answer(
-                    f"✅ Персонаж {md_bold(personality['name'])} создан!\n\n"
-                    f"🧠 {escape_markdown(traits)}\n\n"
+                    f"✅ Персонаж {html_bold(personality['name'])} создан!\n\n"
+                    f"🧠 {html_safe(traits)}\n\n"
                     f"Теперь отправь токен бота:\n"
                     f"1️⃣ Открой @BotFather\n"
                     f"2️⃣ Отправь /newbot\n"
                     f"3️⃣ Придумай имя и username\n"
                     f"4️⃣ Скопируй токен и отправь его сюда",
-                    parse_mode="MarkdownV2")
+                    parse_mode="HTML")
 
         @self.dp.callback_query(
             lambda c: c.data and c.data.startswith("token_for_"))
@@ -311,8 +309,8 @@ class MasterBot:
                 char.get("personality", "{}"))
             name = p.get("name", char["name"])
             await callback.message.answer(
-                f"👤 {md_bold(name)} — отправь токен бота из @BotFather:",
-                parse_mode="MarkdownV2")
+                f"👤 {html_bold(name)} — отправь токен бота из @BotFather:",
+                parse_mode="HTML")
 
         @self.dp.callback_query(lambda c: c.data == "token_new")
         async def cb_token_new(callback: CallbackQuery, state: FSMContext):
@@ -332,10 +330,10 @@ class MasterBot:
 
             traits = ', '.join(personality['traits'])
             await callback.message.answer(
-                f"✅ Персонаж {md_bold(personality['name'])} создан!\n\n"
-                f"🧠 {escape_markdown(traits)}\n\n"
+                f"✅ Персонаж {html_bold(personality['name'])} создан!\n\n"
+                f"🧠 {html_safe(traits)}\n\n"
                 f"Отправь токен бота из @BotFather:",
-                parse_mode="MarkdownV2")
+                parse_mode="HTML")
 
         # Обработка ввода токена
         @self.dp.message(TokenInput.waiting_for_token)
@@ -405,11 +403,11 @@ class MasterBot:
 
             name = personality.get("name", bot_username)
             await message.answer(
-                f"🎉 {md_bold(name)} создан и подключён!\n"
-                f"🤖 @{escape_markdown(bot_username)}\n"
+                f"🎉 {html_bold(name)} создан и подключён!\n"
+                f"🤖 @{html_safe(bot_username)}\n"
                 f"📂 Топик: {'✅' if topic_id else '❌'}\n"
                 f"Теперь он начнёт общаться в группе!",
-                parse_mode="MarkdownV2")
+                parse_mode="HTML")
 
             await state.clear()
 
@@ -487,9 +485,9 @@ class MasterBot:
                 [b for b in active if b.character_id != first.character_id])
 
             await callback.message.answer(
-                f"🗣 {md_bold(first.personality['name'])} "
+                f"🗣 {html_bold(first.personality['name'])} "
                 f"начинает переписку...",
-                parse_mode="MarkdownV2")
+                parse_mode="HTML")
 
             first_msg = await first.send_first_message()
             if not first_msg:
@@ -498,8 +496,8 @@ class MasterBot:
                 return
 
             await callback.message.answer(
-                f"💬 {md_bold(second.personality['name'])} отвечает...",
-                parse_mode="MarkdownV2")
+                f"💬 {html_bold(second.personality['name'])} отвечает...",
+                parse_mode="HTML")
             await asyncio.sleep(random.uniform(3, 10))
 
             reply = await second.reply_to_character(
@@ -512,9 +510,9 @@ class MasterBot:
                     "✅ Переписка началась! Боты будут общаться сами.")
             else:
                 await callback.message.answer(
-                    f"⚠️ {escape_markdown(second.personality['name'])} "
+                    f"⚠️ {html_safe(second.personality['name'])} "
                     f"не в настроении 😅",
-                    parse_mode="MarkdownV2")
+                    parse_mode="HTML")
 
         # ═══════ CREATE TOPICS ═══════
         @self.dp.callback_query(lambda c: c.data == "create_topics")
@@ -709,8 +707,8 @@ class MasterBot:
         model = pending["model"]
 
         await message.answer(
-            f"⏳ Создаю бота для {md_bold(personality['name'])}...",
-            parse_mode="MarkdownV2")
+            f"⏳ Создаю бота для {html_bold(personality['name'])}...",
+            parse_mode="HTML")
 
         try:
             # Правильный Managed Bot API flow:
