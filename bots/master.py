@@ -530,11 +530,7 @@ class MasterBot:
                 f"и {html_bold(second.personality['name'])} состоялась! "
                 f"({total_msgs} сообщений)",
                 parse_mode="HTML")
-            else:
-                await callback.message.answer(
-                    f"⚠️ {html_safe(second.personality['name'])} "
-                    f"не в настроении 😅",
-                    parse_mode="HTML")
+
 
         # ═══════ CREATE TOPICS ═══════
         @self.dp.callback_query(lambda c: c.data == "create_topics")
