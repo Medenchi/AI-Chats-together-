@@ -495,9 +495,6 @@ class MasterBot:
                     "❌ Не удалось сгенерировать сообщение")
                 return
 
-            await callback.message.answer(
-                f"💬 {html_bold(second.personality['name'])} отвечает...",
-                parse_mode="HTML")
             await asyncio.sleep(random.uniform(3, 10))
 
             reply = await second.reply_to_character(
@@ -505,9 +502,34 @@ class MasterBot:
                 other_name=first.personality["name"],
                 other_message=first_msg,
             )
-            if reply:
+            if not reply:
                 await callback.message.answer(
-                    "✅ Переписка началась! Боты будут общаться сами.")
+                    f"⚠️ {html_safe(second.personality['name'])} "
+                    f"не ответил (возможно, спит или не в настроении).",
+                    parse_mode="HTML")
+                return
+
+            # Продолжаем переписку: ещё 3-5 обменов
+            turns = random.randint(3, 5)
+            speaker, listener = second, first
+            for i in range(turns):
+                await asyncio.sleep(random.uniform(5, 15))
+                next_reply = await speaker.reply_to_character(
+                    other_char_id=listener.character_id,
+                    other_name=listener.personality["name"],
+                    other_message=reply,
+                )
+                if not next_reply:
+                    break
+                reply = next_reply
+                speaker, listener = listener, speaker
+
+            total_msgs = 2 + turns
+            await callback.message.answer(
+                f"✅ Переписка {html_bold(first.personality['name'])} "
+                f"и {html_bold(second.personality['name'])} состоялась! "
+                f"({total_msgs} сообщений)",
+                parse_mode="HTML")
             else:
                 await callback.message.answer(
                     f"⚠️ {html_safe(second.personality['name'])} "

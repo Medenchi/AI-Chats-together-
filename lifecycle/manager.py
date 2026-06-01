@@ -159,7 +159,7 @@ class LifecycleManager:
             try:
                 active = [b for b in self.master_bot.bots.values()
                           if not b.is_sleeping]
-                if len(active) >= 2 and random.random() < 0.1:
+                if len(active) >= 2 and random.random() < 0.35:
                     c1 = random.choice(active)
                     others = [b for b in active
                               if b.character_id != c1.character_id]
@@ -196,12 +196,12 @@ class LifecycleManager:
                             if not reply:
                                 break
 
-                await asyncio.sleep(600)
+                await asyncio.sleep(300)
             except asyncio.CancelledError:
                 break
             except Exception as e:
                 logger.error("Bot-to-bot loop: %s", e)
-                await asyncio.sleep(300)
+                await asyncio.sleep(120)
 
     # ── Topic creation helper ──
     async def create_topic(self, character_id: int, name: str):
