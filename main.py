@@ -55,7 +55,7 @@ def build_config() -> dict:
         "FREEMODEL_API_KEY": os.getenv("FREEMODEL_API_KEY"),
         "FREEMODEL_BASE_URL": os.getenv("FREEMODEL_BASE_URL", "https://freemodel.dev/v1"),
         "DATABASE_PATH": os.getenv("DATABASE_PATH", "data/bots.db"),
-        "AVAILABLE_MODELS": os.getenv("AVAILABLE_MODELS", "gpt-4o,claude-sonnet-4,deepseek-chat").split(","),
+        "AVAILABLE_MODELS": os.getenv("AVAILABLE_MODELS", "gpt-5.5,gpt-5.4,gpt-5.4-mini,gpt-5.3-codex").split(","),
         "MAX_CLONES": int(os.getenv("MAX_CLONES_PER_CHARACTER", "3")),
         "MAX_BOTS": int(os.getenv("MAX_TOTAL_BOTS", "10")),
         "DEFAULT_REPLY_CHANCE": float(os.getenv("DEFAULT_REPLY_CHANCE", "0.7")),

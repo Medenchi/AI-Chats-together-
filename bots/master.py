@@ -177,7 +177,7 @@ class MasterBot:
                 return
 
             model = random.choice(
-                self.config.get("AVAILABLE_MODELS", ["gpt-4o"]))
+                self.config.get("AVAILABLE_MODELS", ["gpt-5.5"]))
             await callback.message.answer(
                 f"🎭 Генерирую характер (модель: {model})... Подожди ~10 сек...")
 
@@ -272,7 +272,7 @@ class MasterBot:
             else:
                 # Генерируем нового персонажа
                 model = random.choice(
-                    self.config.get("AVAILABLE_MODELS", ["gpt-4o"]))
+                    self.config.get("AVAILABLE_MODELS", ["gpt-5.5"]))
                 await callback.message.answer(
                     f"🎭 Генерирую нового персонажа ({model})...")
                 personality = await self.pg.generate_personality(model=model)
@@ -316,7 +316,7 @@ class MasterBot:
         async def cb_token_new(callback: CallbackQuery, state: FSMContext):
             await callback.answer()
             model = random.choice(
-                self.config.get("AVAILABLE_MODELS", ["gpt-4o"]))
+                self.config.get("AVAILABLE_MODELS", ["gpt-5.5"]))
             await callback.message.answer(
                 f"🎭 Генерирую нового персонажа ({model})...")
             personality = await self.pg.generate_personality(model=model)
@@ -353,7 +353,7 @@ class MasterBot:
             if not char_id:
                 # Фоллбэк — создаём нового
                 model = random.choice(
-                    self.config.get("AVAILABLE_MODELS", ["gpt-4o"]))
+                    self.config.get("AVAILABLE_MODELS", ["gpt-5.5"]))
                 personality = await self.pg.generate_personality(model=model)
                 char_id = await self.db.add_character(
                     name=personality["name"], age=personality["age"],
