@@ -137,7 +137,6 @@ class CharacterBot:
                 chat_id=self.group_id,
                 text=resp.strip(),
                 message_thread_id=message.message_thread_id or self.personality.get("topic_id"),
-                reply_to_message_id=message.message_id,
             )
             tid = self.personality.get("topic_id")
             await self.db.add_conversation(

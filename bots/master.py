@@ -644,10 +644,7 @@ class MasterBot:
                     [0x6FB9F0, 0xFFD67E, 0xCB86DB, 0x8EEE98, 0xFF93B0, 0xFB6F5F]),
             )
             await self.db.add_topic(
-                topic_id=topic.message_thread_id,
-                topic_name=name,
-                created_by_character_id=char_id,
-            )
+                topic.message_thread_id, name, char_id)
             logger.info("📂 Topic '%s' created in GROUP (thread_id=%d)",
                         name, topic.message_thread_id)
             return topic.message_thread_id
