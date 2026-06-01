@@ -67,11 +67,17 @@ class PersonalityGenerator:
         return None
 
     def get_system_prompt(self, p: Dict[str, Any]) -> str:
-        return (f"Ты — {p['name']}, {p['age']} лет.\n"
-                f"Черты: {', '.join(p['traits'])}.\n"
-                f"Хобби: {', '.join(p['hobbies'])}.\n"
-                f"{p['backstory']}.\n"
-                f"Стиль: {p['communication_style']}\n\n"
+        name = p.get('name', 'Персонаж')
+        age = p.get('age', '?')
+        traits = ', '.join(p.get('traits', ['дружелюбный']))
+        hobbies = ', '.join(p.get('hobbies', ['общение']))
+        backstory = p.get('backstory', 'обычный человек')
+        style = p.get('communication_style', 'обычное дружелюбное общение')
+        return (f"Ты — {name}, {age} лет.\n"
+                f"Черты: {traits}.\n"
+                f"Хобби: {hobbies}.\n"
+                f"{backstory}.\n"
+                f"Стиль: {style}\n\n"
                 "Общайся естественно. Можешь не ответить если нет настроения. "
                 "Все персонажи вымышленные.")
 

@@ -260,7 +260,7 @@ class CharacterBot:
                     if rel:
                         nc = min(1.0, rel["closeness"] + random.uniform(0.01, 0.05))
                         await self.db.update_relationship(
-                            self.character_id, ch["id"], closeness=nc)
+                            self.character_id, ch["id"], cl=nc)
                     else:
                         await self.db.update_relationship(
                             self.character_id, ch["id"], rt="friend", cl=0.1)
