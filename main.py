@@ -1,4 +1,4 @@
-"""AI-Chats-Together v2: автономные AI-боты в Telegram с Managed Bots API."""
+"""AI-Chats-Together v2: автономные AI-боты в Telegram с Managed Bots API + ручной ввод токена."""
 import os
 import sys
 import asyncio
@@ -41,6 +41,14 @@ def validate_env() -> bool:
 
 
 def build_config() -> dict:
+    admin_ids_str = os.getenv("ADMIN_USER_IDS", "")
+    admin_ids = []
+    if admin_ids_str:
+        try:
+            admin_ids = [int(x.strip()) for x in admin_ids_str.split(",") if x.strip()]
+        except ValueError:
+            logger.warning("ADMIN_USER_IDS содержит невалидные ID")
+
     return {
         "MASTER_BOT_TOKEN": os.getenv("MASTER_BOT_TOKEN"),
         "GROUP_ID": int(os.getenv("GROUP_ID")),
@@ -50,6 +58,11 @@ def build_config() -> dict:
         "AVAILABLE_MODELS": os.getenv("AVAILABLE_MODELS", "gpt-4o,claude-sonnet-4,deepseek-chat").split(","),
         "MAX_CLONES": int(os.getenv("MAX_CLONES_PER_CHARACTER", "3")),
         "MAX_BOTS": int(os.getenv("MAX_TOTAL_BOTS", "10")),
+        "DEFAULT_REPLY_CHANCE": float(os.getenv("DEFAULT_REPLY_CHANCE", "0.7")),
+        "INITIATE_CHAT_CHANCE": float(os.getenv("INITIATE_CHAT_CHANCE", "0.15")),
+        "MIN_MESSAGE_INTERVAL": int(os.getenv("MIN_MESSAGE_INTERVAL", "120")),
+        "MAX_MESSAGE_INTERVAL": int(os.getenv("MAX_MESSAGE_INTERVAL", "1800")),
+        "ADMIN_USER_IDS": admin_ids,
     }
 
 

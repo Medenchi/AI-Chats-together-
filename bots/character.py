@@ -44,9 +44,12 @@ class CharacterBot:
     async def start(self):
         self.is_running = True
         logger.info("▶ %s (ID %d)", self.personality["name"], self.character_id)
-        self._tasks.append(asyncio.create_task(self._message_loop(), name=f"msg-{self.character_id}"))
-        self._tasks.append(asyncio.create_task(self._mood_loop(), name=f"mood-{self.character_id}"))
-        self._tasks.append(asyncio.create_task(self._rel_loop(), name=f"rel-{self.character_id}"))
+        self._tasks.append(asyncio.create_task(
+            self._message_loop(), name=f"msg-{self.character_id}"))
+        self._tasks.append(asyncio.create_task(
+            self._mood_loop(), name=f"mood-{self.character_id}"))
+        self._tasks.append(asyncio.create_task(
+            self._rel_loop(), name=f"rel-{self.character_id}"))
 
     async def stop(self):
         self.is_running = False
@@ -54,6 +57,11 @@ class CharacterBot:
             t.cancel()
         await asyncio.gather(*self._tasks, return_exceptions=True)
         self._tasks.clear()
+        # Закрываем сессию бота
+        try:
+            await self.bot.session.close()
+        except Exception:
+            pass
 
     # ── Message loop ───────────────────────────────────────────
     async def _message_loop(self):
@@ -89,7 +97,6 @@ class CharacterBot:
                 model=self.personality["model"],
                 messages=[{"role": "user", "content": prompt}],
                 max_tokens=150, temperature=0.8)
-            # ✅ message_thread_id = ID топика в ГРУППЕ
             tid = self.personality.get("topic_id")
             await self.bot.send_message(
                 chat_id=self.group_id,
@@ -97,7 +104,8 @@ class CharacterBot:
                 message_thread_id=tid if tid else None,
             )
             await self.db.add_conversation(
-                fc=self.character_id, tc=None, tid=tid, msg=resp.strip(), is_bot=True)
+                fc=self.character_id, tc=None, tid=tid,
+                msg=resp.strip(), is_bot=True)
             logger.info("💬 %s: %s", self.personality["name"], resp[:40])
         except Exception as e:
             logger.error("gen msg: %s", e)
@@ -124,12 +132,20 @@ class CharacterBot:
                 model=self.personality["model"],
                 messages=[{"role": "user", "content": prompt}],
                 max_tokens=100, temperature=0.8)
+            # Ответ в тот же thread/topic где написал пользователь
+            await self.bot.send_message(
+                chat_id=self.group_id,
+                text=resp.strip(),
+                message_thread_id=message.message_thread_id or self.personality.get("topic_id"),
+                reply_to_message_id=message.message_id,
+            )
             tid = self.personality.get("topic_id")
-            await message.reply(resp.strip())
             await self.db.add_conversation(
-                fc=self.character_id, tc=None, tid=tid, msg=resp.strip(), is_bot=True)
+                fc=self.character_id, tc=None, tid=tid,
+                msg=resp.strip(), is_bot=True)
             await self.db.add_memory(
-                self.character_id, f"Ответил {sender_name}: {resp.strip()}", "conversation", 0.6)
+                self.character_id,
+                f"Ответил {sender_name}: {resp.strip()}", "conversation", 0.6)
         except Exception as e:
             logger.error("reply: %s", e)
 
@@ -139,7 +155,8 @@ class CharacterBot:
             if random.random() < 0.3:
                 await self._wakeup()
             else:
-                logger.info("💤 %s спит, игнорирует %s", self.personality["name"], other_name)
+                logger.info("💤 %s спит, игнорирует %s",
+                            self.personality["name"], other_name)
                 return None
 
         convs = await self.db.get_conversations(limit=5)
@@ -158,14 +175,18 @@ class CharacterBot:
             tid = self.personality.get("topic_id")
             await self.bot.send_message(
                 chat_id=self.group_id,
-                text=resp.strip(),
+                text=f"@{other_name} {resp.strip()}" if other_name else resp.strip(),
                 message_thread_id=tid if tid else None,
             )
             await self.db.add_conversation(
-                fc=self.character_id, tc=other_char_id, tid=tid, msg=resp.strip(), is_bot=True)
+                fc=self.character_id, tc=other_char_id, tid=tid,
+                msg=resp.strip(), is_bot=True)
             await self.db.add_memory(
-                self.character_id, f"{other_name}: {other_message} → Я: {resp.strip()[:50]}", "conversation", 0.7)
-            logger.info("💬 %s → %s: %s", self.personality["name"], other_name, resp[:40])
+                self.character_id,
+                f"{other_name}: {other_message} → Я: {resp.strip()[:50]}",
+                "conversation", 0.7)
+            logger.info("💬 %s → %s: %s",
+                        self.personality["name"], other_name, resp[:40])
             return resp.strip()
         except Exception as e:
             logger.error("bot-to-bot reply: %s", e)
@@ -188,7 +209,8 @@ class CharacterBot:
                 chat_id=self.group_id, text=resp.strip(),
                 message_thread_id=tid if tid else None)
             await self.db.add_conversation(
-                fc=self.character_id, tc=None, tid=tid, msg=resp.strip(), is_bot=True)
+                fc=self.character_id, tc=None, tid=tid,
+                msg=resp.strip(), is_bot=True)
             logger.info("🎬 %s начал: %s", self.personality["name"], resp[:40])
             return resp.strip()
         except Exception as e:
@@ -203,7 +225,7 @@ class CharacterBot:
         logger.info("☀️ %s проснулся", self.personality["name"])
 
     async def _mood_loop(self):
-        moods = ["happy","neutral","grumpy","sleepy","energetic"]
+        moods = ["happy", "neutral", "grumpy", "sleepy", "energetic"]
         while self.is_running:
             try:
                 nm = random.choice(moods)
@@ -212,8 +234,10 @@ class CharacterBot:
                 await self.db.save_state(self.character_id, "mood", nm)
                 if nm == "sleepy" and not self.is_sleeping:
                     self.is_sleeping = True
-                    await self.db.update_character(self.character_id, is_sleeping=True)
-                    await self.db.save_state(self.character_id, "is_sleeping", "true")
+                    await self.db.update_character(
+                        self.character_id, is_sleeping=True)
+                    await self.db.save_state(
+                        self.character_id, "is_sleeping", "true")
                     logger.info("😴 %s уснул", self.personality["name"])
                 elif nm == "energetic" and self.is_sleeping:
                     await self._wakeup()
@@ -231,12 +255,15 @@ class CharacterBot:
                 for ch in await self.db.get_all_characters():
                     if ch["id"] == self.character_id:
                         continue
-                    rel = await self.db.get_relationship(self.character_id, ch["id"])
+                    rel = await self.db.get_relationship(
+                        self.character_id, ch["id"])
                     if rel:
                         nc = min(1.0, rel["closeness"] + random.uniform(0.01, 0.05))
-                        await self.db.update_relationship(self.character_id, ch["id"], closeness=nc)
+                        await self.db.update_relationship(
+                            self.character_id, ch["id"], closeness=nc)
                     else:
-                        await self.db.update_relationship(self.character_id, ch["id"], rt="friend", cl=0.1)
+                        await self.db.update_relationship(
+                            self.character_id, ch["id"], rt="friend", cl=0.1)
                 await asyncio.sleep(7200)
             except asyncio.CancelledError:
                 break
@@ -249,7 +276,9 @@ class CharacterBot:
     def _fmt_conv(c):
         if not c:
             return "Нет сообщений"
-        return "\n".join(f"{'Ты' if x.get('is_bot_message') else 'Кто-то'}: {x['message']}" for x in reversed(c[:5]))
+        return "\n".join(
+            f"{'Ты' if x.get('is_bot_message') else 'Кто-то'}: {x['message']}"
+            for x in reversed(c[:5]))
 
     @staticmethod
     def _fmt_mem(m):
